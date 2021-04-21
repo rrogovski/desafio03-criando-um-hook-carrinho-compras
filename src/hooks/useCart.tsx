@@ -32,9 +32,9 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     return [];
   });
 
-  useEffect(() => {
-    addProductToLocalStorage();
-  }, [cart])
+  // useEffect(() => {
+  //   addProductToLocalStorage();
+  // }, [cart])
 
   const hasQuantityInStock = async (productId: number, amount: number) => {
     await api.get(`stock?id=${productId}`)
@@ -71,6 +71,7 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
 
       setCart(cartUpdated);
+      localStorage.setItem('@RocketShoes:cart', JSON.stringify(cartUpdated));
     } catch {
       // TODO
       toast.error('Erro na adição do produto');
@@ -80,9 +81,17 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
   const removeProduct = (productId: number) => {
     try {
       const cartUpdated = [...cart];
-      const carFiltred = cartUpdated.filter(product => product.id !== productId)
-      setCart(carFiltred);
-      toast.success('Item removido!');
+      const productIndex = cartUpdated.findIndex(product => product.id === productId)
+
+      if (productIndex >= 0) {
+        cartUpdated.splice(productIndex, 1);
+        setCart(cartUpdated);
+        localStorage.setItem('@RocketShoes:cart', JSON.stringify(cartUpdated));
+        toast.success('Item removido!');
+      } else {
+        throw Error();
+      }
+
     } catch {
       // TODO
       toast.error('Erro na remoção do produto');
@@ -94,6 +103,10 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     amount,
   }: UpdateProductAmount) => {
     try {
+      if (amount < 1) {
+        throw Error();
+      }
+
       const responseStock = await api.get(`stock/${productId}`)
       const stock = responseStock.data;
 
@@ -108,6 +121,7 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
       if (!!productUpdated) {
         productUpdated.amount = amount;
         setCart(cartUpdate);
+        localStorage.setItem('@RocketShoes:cart', JSON.stringify(cartUpdate));
       }
     } catch {
       // TODO
